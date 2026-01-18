@@ -8,9 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Setup SSH key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -18,8 +15,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo -e "Host *\n\tIdentityFile ~/.ssh/id_rsa\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile /dev/null\n" > ~/.ssh/config
+          # Настроить алиас 'gitea' на реальный хост/порт
+          echo -e "Host gitea\n\tHostName gitea.pozdniakov.pro\n\tPort 2222\n\tIdentityFile ~/.ssh/id_rsa\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n" > ~/.ssh/config
           chmod 600 ~/.ssh/config
+          # Заменять обращения к http://gitea:3000/... на ssh://git@gitea.pozdniakov.pro:2222/...
+          git config --global url."ssh://git@gitea.pozdniakov.pro:2222/".insteadOf "http://gitea:3000/"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
       - name: Deploy to server1
         env:
@@ -28,5 +33,5 @@ jobs:
         run: |
           ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $SSH_USER@$SERVER1 \
             "sudo rm -rf /app && sudo mkdir /app && sudo chmod a+rwx /app && cd /app && \
-             git clone http://git.pozdniakov.pro/symfony/crypto.git . && sudo chown www-data:www-data . -R && \
+             git clone http://gitea.pozdniakov.pro/root/crypto.git . && sudo chown www-data:www-data . -R && \
              bash ./deploy.sh $SERVER1"
