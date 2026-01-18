@@ -12,19 +12,21 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+          echo -e "Host *\n\tIdentityFile ~/.ssh/id_rsa\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile /dev/null\n" > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Deploy to server1
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SERVER1: ${{ secrets.SERVER1 }}
         run: |
           ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $SSH_USER@$SERVER1 \
             "sudo rm -rf /app && sudo mkdir /app && sudo chmod a+rwx /app && cd /app && \
-             git clone http://git.pozdniakov.pro/symfony/crypto.git . && sudo chown www-data:www-data . -R && \
+             git clone ssh://git@gitea.pozdniakov.pro:2222/root/crypto.git . && sudo chown www-data:www-data . -R && \
              bash ./deploy.sh $SERVER1"
