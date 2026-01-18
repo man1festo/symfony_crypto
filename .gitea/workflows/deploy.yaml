@@ -1,0 +1,24 @@
+name: Deploy to Server 1
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SERVER1 }}
+                  username: ${{ secrets.SSH_USER }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      sudo rm -rf /app
+                      sudo mkdir /app
+                      sudo chmod a+rwx /app
+                      cd /app
+                      git clone http://gitea.pozdniakov.pro/root/crypto.git .
+                      sudo chown www-data:www-data . -R
+                      bash ./deploy.sh ${{ secrets.SERVER1 }}

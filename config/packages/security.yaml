@@ -1,0 +1,57 @@
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'bcrypt'
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Domain\Entity\User
+                property: login
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        refresh_token:
+            pattern: ^/api/v1/refresh-token
+            stateless: true
+            custom_authenticator: App\Application\Security\ApiTokenAuthenticator
+        token:
+            pattern: ^/api/v1/get-token
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            stateless: true
+            custom_authenticator: App\Application\Security\JWTAuthenticator
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+
+            # activate different ways to authenticate
+            # https://symfony.com/doc/current/security.html#the-firewall
+
+            # https://symfony.com/doc/current/security/impersonating_user.html
+            # switch_user: true
+
+    # Easy way to control access for large sections of your site
+    # Note: Only the *first* access control that matches will be used
+    access_control:
+        - { path: ^/api/v1/account, roles: ROLE_USER }
+        # - { path: ^/profile, roles: ROLE_USER }
+    role_hierarchy:
+        ROLE_ADMIN:
+            - ROLE_USER
+            - ROLE_APPROVED
+
+when@dev:
+    security:
+        role_hierarchy:
+            ROLE_QA:
+                - ROLE_USER
+                - ROLE_APPROVED
+                - ROLE_ADMIN
+            ROLE_ADMIN:
+                - ROLE_USER
+                - ROLE_APPROVED

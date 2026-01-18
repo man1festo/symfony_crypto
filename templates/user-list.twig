@@ -1,0 +1,26 @@
+{% extends 'layout.twig' %}
+{% block title %}User list{% endblock %}
+{% block body %}
+    <table class="table table-hover">
+        <tbody>
+        <tr>
+            <th>ID</th>
+            <th>Логин</th>
+            <th>Сделки на продажу</th>
+            <th>Сделки на покупку</th>
+            <th>Счета</th>
+            <th>Роли</th>
+        </tr>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.login }}</td>
+                <td>{{ user.saleOrders|formatEntityArray }}</td>
+                <td>{{ user.purchaseOrders|formatEntityArray }}</td>
+                <td>{{ user.userAccounts|formatEntityArray }}</td>
+                <td>{{ user.userRoles|formatEntityArray }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

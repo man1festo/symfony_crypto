@@ -1,0 +1,156 @@
+{# templates/orders_form.twig #}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Orders Form</title>
+    <link rel="stylesheet" href="/build/app.css">
+</head>
+<body>
+<div class="container py-4">
+    <h1 class="mb-4">Orders</h1>
+
+    <div id="orders-app">
+        <div class="card mb-4">
+            <div class="card-body">
+                <form @submit.prevent="submitOrder" class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Account ID</label>
+                        <input v-model="form.accountId" type="number" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Amount</label>
+                        <input v-model.number="form.amount" type="number" step="0.01" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Type</label>
+                        <select v-model="form.type" class="form-select">
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" :disabled="loading">Create Order</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <h2 class="h5">Orders list</h2>
+            <button class="btn btn-outline-secondary btn-sm" @click="fetchOrders" :disabled="loading">Refresh</button>
+        </div>
+
+        <div v-if="loading" class="text-center py-3">Loading...</div>
+        <div v-else>
+            <table v-if="orders.length" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>Account</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="o in orders" :key="o.id">
+                    <td>{{ o.id }}</td>
+                    <td>{{ o.type }}</td>
+                    <td>{{ o.accountId }}</td>
+                    <td>{{ o.amount }}</td>
+                    <td>{{ o.status ?? 'pending' }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-danger" @click="removeOrder(o.id)">Delete</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div v-else class="alert alert-info">No orders yet.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Vue 3 from CDN to avoid adding a build dependency. If you use webpack/encore with Vue installed, replace this with an import. -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+    (function () {
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    orders: [],
+                    loading: false,
+                    form: {
+                        accountId: null,
+                        amount: null,
+                        type: 'buy'
+                    }
+                };
+            },
+            mounted() {
+                this.fetchOrders();
+            },
+            methods: {
+                async fetchOrders() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch('/api/orders');
+                        if (!res.ok) throw new Error('Failed to fetch orders');
+                        this.orders = await res.json();
+                    } catch (e) {
+                        console.error(e);
+                        this.orders = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async submitOrder() {
+                    this.loading = true;
+                    try {
+                        const payload = {
+                            accountId: Number(this.form.accountId),
+                            amount: Number(this.form.amount),
+                            type: this.form.type
+                        };
+                        const res = await fetch('/api/orders', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!res.ok) throw new Error('Failed to create order');
+                        const created = await res.json();
+                        // prepend new order to the list
+                        this.orders.unshift(created);
+                        // reset form
+                        this.form.accountId = null;
+                        this.form.amount = null;
+                        this.form.type = 'buy';
+                    } catch (e) {
+                        console.error(e);
+                        alert('Could not create order.');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async removeOrder(id) {
+                    if (!confirm('Delete order #' + id + '?')) return;
+                    try {
+                        const res = await fetch('/api/orders/' + id, { method: 'DELETE' });
+                        if (!res.ok) throw new Error('Failed to delete');
+                        this.orders = this.orders.filter(o => o.id !== id);
+                    } catch (e) {
+                        console.error(e);
+                        alert('Could not delete order.');
+                    }
+                }
+            }
+        }).mount('#orders-app');
+    })();
+</script>
+</body>
+</html>
+
