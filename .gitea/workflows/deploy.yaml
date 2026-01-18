@@ -1,3 +1,4 @@
+language: yaml
 name: Deploy to server1
 on:
   push:
@@ -15,23 +16,51 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          # Настроить алиас 'gitea' на реальный хост/порт
-          echo -e "Host gitea\n\tHostName gitea.pozdniakov.pro\n\tPort 2222\n\tIdentityFile ~/.ssh/id_rsa\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n" > ~/.ssh/config
-          chmod 600 ~/.ssh/config
-          # Заменять обращения к http://gitea:3000/... на ssh://git@gitea.pozdniakov.pro:2222/...
-          git config --global url."ssh://git@gitea.pozdniakov.pro:2222/".insteadOf "http://gitea:3000/"
 
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+          # Конфиг для алиаса и реального домена (порт 2222)
+          cat > ~/.ssh/config <<'EOF'
+  Host gitea
+  HostName gitea.pozdniakov.pro
+  Port 2222
+  User git
+  IdentityFile ~/.ssh/id_rsa
+  StrictHostKeyChecking no
+  UserKnownHostsFile ~/.ssh/known_hosts
+  
+  Host gitea.pozdniakov.pro
+  HostName gitea.pozdniakov.pro
+  Port 2222
+  User git
+  IdentityFile ~/.ssh/id_rsa
+  StrictHostKeyChecking no
+  UserKnownHostsFile ~/.ssh/known_hosts
+  EOF
+  chmod 600 ~/.ssh/config
+  
+  # Добавляем ключ хоста (чтобы избежать "Host key verification failed")
+  ssh-keyscan -p 2222 gitea.pozdniakov.pro >> ~/.ssh/known_hosts || true
+  chmod 644 ~/.ssh/known_hosts
+  
+  # Заменять HTTP обращения на SSH (оба варианта)
+  git config --global url."ssh://git@gitea.pozdniakov.pro:2222/".insteadOf "http://gitea:3000/"
+  git config --global url."ssh://git@gitea.pozdniakov.pro:2222/".insteadOf "http://gitea.pozdniakov.pro/"
 
-      - name: Deploy to server1
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SERVER1: ${{ secrets.SERVER1 }}
-        run: |
-          ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $SSH_USER@$SERVER1 \
-            "sudo rm -rf /app && sudo mkdir /app && sudo chmod a+rwx /app && cd /app && \
-             git clone http://gitea.pozdniakov.pro/root/crypto.git . && sudo chown www-data:www-data . -R && \
-             bash ./deploy.sh $SERVER1"
+- name: Checkout
+  uses: actions/checkout@v3
+  with:
+    fetch-depth: 1
+
+- name: Deploy to server1
+  env:
+    SSH_USER: ${{ secrets.SSH_USER }}
+    SERVER1: ${{ secrets.SERVER1 }}
+  run: |
+    # Клонируем на удалённом сервере через SSH-URL (порт 2222)
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $SSH_USER@$SERVER1 \
+      "sudo rm -rf /app && \
+       sudo mkdir -p /app && \
+       sudo chmod a+rwx /app && \
+       cd /app && \
+       git clone ssh://git@gitea.pozdniakov.pro:2222/root/crypto.git . && \
+       sudo chown www-data:www-data . -R && \
+       bash ./deploy.sh $SERVER1"
