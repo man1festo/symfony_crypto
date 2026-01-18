@@ -28,6 +28,6 @@ jobs:
              sudo mkdir -p /app && \
              sudo chmod a+rwx /app && \
              cd /app && \
-             git clone ssh://git@gitea.pozdniakov.pro:2222/root/crypto.git . && \
+             git clone http://gitea.pozdniakov.pro/root/crypto.git . && \
              sudo chown www-data:www-data . -R && \
              bash ./deploy.sh $SERVER1"
