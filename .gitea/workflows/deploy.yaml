@@ -28,5 +28,5 @@ jobs:
         run: |
           ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $SSH_USER@$SERVER1 \
             "sudo rm -rf /app && sudo mkdir /app && sudo chmod a+rwx /app && cd /app && \
-             git clone ssh://git@gitea.pozdniakov.pro:2222/root/crypto.git . && sudo chown www-data:www-data . -R && \
+             git clone http://git.pozdniakov.pro/symfony/crypto.git . && sudo chown www-data:www-data . -R && \
              bash ./deploy.sh $SERVER1"
