@@ -21,8 +21,6 @@ class Feed implements EntityInterface
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $comments;
-    #[ORM\Column(type: UuidType::NAME)]
-    private Uuid $uid;
 
     public function getId(): int
     {
