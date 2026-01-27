@@ -68,4 +68,9 @@ class OrderRepositoryCacheDecorator implements OrderRepositoryInterface
     {
         $this->orderRepository->setSellerToOrder($order, $user, $account);
     }
+
+    public function findById(int $id): ?Order
+    {
+        return $this->orderRepository->findById($id);
+    }
 }

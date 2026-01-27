@@ -15,7 +15,7 @@ deploy_server1:
             sudo mkdir /app &&
             sudo chmod a+rwx /app &&
             cd /app &&
-            git clone http://gitea.pozdniakov.pro/root/crypto.git . &&
+            git clone http://git.pozdniakov.pro/symfony/crypto.git . &&
             sudo chown www-data:www-data . -R &&
             bash ./deploy.sh $SERVER1"
     only:

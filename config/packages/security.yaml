@@ -12,6 +12,9 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        create_user:
+            pattern: ^/api/v2/user/create
+            security: false
         refresh_token:
             pattern: ^/api/v1/refresh-token
             stateless: true

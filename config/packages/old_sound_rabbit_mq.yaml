@@ -7,6 +7,12 @@ old_sound_rabbit_mq:
         create_orders:
             connection: default
             exchange_options: {name: 'old_sound_rabbit_mq.create_orders', type: direct}
+        publish_comment:
+            connection: default
+            exchange_options: { name: 'old_sound_rabbit_mq.publish_comment', type: direct }
+        update_feed:
+            connection: default
+            exchange_options: { name: 'old_sound_rabbit_mq.update_feed', type: direct }
 
     consumers:
         create_orders:
@@ -20,3 +26,14 @@ old_sound_rabbit_mq:
                 timeout: 1800
                 exit_code: 0
             qos_options: {prefetch_size: 0, prefetch_count: 1, global: false}
+        publish_comment:
+            connection: default
+            exchange_options: { name: 'old_sound_rabbit_mq.publish_comment', type: direct }
+            queue_options: { name: 'old_sound_rabbit_mq.consumer.publish_comment' }
+            callback: App\Controller\Amqp\PublishComment\Consumer
+            idle_timeout: 300
+            idle_timeout_exit_code: 0
+            graceful_max_execution:
+                timeout: 1800
+                exit_code: 0
+            qos_options: { prefetch_size: 0, prefetch_count: 1, global: false }

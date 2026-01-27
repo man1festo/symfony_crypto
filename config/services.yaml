@@ -80,3 +80,16 @@ services:
     App\Infrastructure\Bus\RabbitMqBus:
         calls:
             - [ 'registerProducer', [ !php/enum App\Infrastructure\Bus\AmqpExchangeEnum::CreateOrders, '@old_sound_rabbit_mq.create_orders_producer' ] ]
+            - [ 'registerProducer', [ !php/enum App\Infrastructure\Bus\AmqpExchangeEnum::PublishComment, '@old_sound_rabbit_mq.publish_comment_producer' ] ]
+            - [ 'registerProducer', [ !php/enum App\Infrastructure\Bus\AmqpExchangeEnum::UpdateFeed, '@old_sound_rabbit_mq.update_feed_producer' ]]
+    feed_http_client:
+        class: GuzzleHttp\Client
+
+    App\Infrastructure\Repository\FeedRepository:
+        arguments:
+            - '@feed_http_client'
+            - 'http://nginx:80'
+    App\Domain\Bus\CreateOrdersBusInterface:
+        alias: App\Domain\Bus\Adapter\CreateOrdersMessageBus
+    App\Domain\Bus\UpdateFeedBusInterface:
+        alias: App\Domain\Bus\Adapter\UpdateFeedMessageBus
